@@ -1,17 +1,30 @@
-// src/pages/Home.jsx
-
-import { useState } from "react";
+// NEW: Import useEffect to handle side-effects like language changes
+import { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import LanguageSelector from "../components/LanguageSelector";
 import ChatInput from "../components/ChatInput";
-import ChatMessage from "../components/ChatMessage"; // We will use this new component
+import ChatMessage from "../components/ChatMessage";
+
+// NEW: Import the hooks for language management
+import { useLanguage } from "../context/LanguageContext";
+import { useTranslation } from "react-i18next";
 
 export default function Home() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // NEW: Get language state and translation functions
+  const { language } = useLanguage(); // Gets current language code (e.g., "en", "hi")
+  const { t, i18n } = useTranslation(); // Gets the translation function `t` and the i18next instance
+
+  // NEW: This hook connects your language selector to the i18next library.
+  // When you change the language in the dropdown, this code runs and updates the UI language.
+  useEffect(() => {
+    i18n.changeLanguage(language);
+  }, [language, i18n]);
 
   const handleSend = async (message) => {
     // Immediately display the user's message for a snappy UI
@@ -26,23 +39,28 @@ export default function Home() {
 
     // Prepare the data to send to the backend
     const formData = new FormData();
-    // The backend expects a file, so we must send one.
-    // We send the image if available, otherwise an empty placeholder.
     if (message.image) {
       formData.append("file", message.image);
     } else {
-      // Create a dummy empty file if no image is selected
       const emptyFile = new Blob([""], { type: "image/png" });
       formData.append("file", emptyFile, "empty.png");
     }
     formData.append("text", message.text);
 
+    // NEW: We now send the selected language to the backend
+    formData.append("language", language);
 
     try {
       // Call your Python backend API
-      const response = await axios.post("http://127.0.0.1:8000/predict", formData);
+      const response = await axios.post(
+        "http://127.0.0.1:8000/predict",
+        formData
+      );
 
-      const aiResponseText = response.data.analysis || response.data.error || "Sorry, I couldn't get a response.";
+      const aiResponseText =
+        response.data.analysis ||
+        response.data.error ||
+        "Sorry, I couldn't get a response.";
 
       // Display the AI's response
       const aiMessage = {
@@ -50,9 +68,9 @@ export default function Home() {
         text: aiResponseText,
       };
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
-
     } catch (err) {
-      const errorMessage = "Connection Error: Could not reach the backend. Is it running?";
+      const errorMessage =
+        "Connection Error: Could not reach the backend. Is it running?";
       setError(errorMessage);
       setMessages((prev) => [...prev, { sender: "ai", text: errorMessage }]);
       console.error(err);
@@ -66,35 +84,30 @@ export default function Home() {
       <Sidebar />
 
       <div className="flex flex-col flex-1">
-        <div className="flex-1 flex flex-col relative"> {/* Added relative positioning */}
-          
-          {/* Language selector stays at the top right */}
+        <div className="flex-1 flex flex-col relative">
           <div className="absolute top-0 right-0 p-4 z-10">
-             <LanguageSelector />
+            <LanguageSelector />
           </div>
 
-          {/* Chat messages area */}
           <div className="flex-1 overflow-y-auto">
             {messages.length === 0 && !isLoading && (
               <div className="h-full flex items-center justify-center">
                 <Header />
               </div>
             )}
-            
-            {/* Render the chat messages */}
+
             {messages.map((msg, index) => (
               <ChatMessage key={index} message={msg} />
             ))}
-            
-            {/* Show a loading indicator */}
+
             {isLoading && (
               <div className="p-4 text-center text-gray-500">
-                AI is thinking...
+                {/* NEW: Translate the loading text */}
+                {t("aiIsThinking")}
               </div>
             )}
-            
-            {/* Show an error message if one exists */}
-             {error && !isLoading && (
+
+            {error && !isLoading && (
               <div className="p-4 text-center text-red-500 font-bold">
                 {error}
               </div>
