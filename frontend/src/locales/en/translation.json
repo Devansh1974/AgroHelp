@@ -1,0 +1,14 @@
+{
+    "appTitle": "Farmer AI Assistant",
+    "appSubtitle": "Upload an image of a plant leaf to detect diseases.",
+    "newChat": "New Chat",
+    "searchChats": "Search Chats",
+    "history": "History",
+    "analyzeImage": "Analyze Image",
+    "analyzing": "Analyzing...",
+    "aiIsThinking": "AI is thinking...",
+    "chatPlaceholder": "Type your message or ask a question...",
+    "alertNoMicSupport": "Your browser does not support speech recognition.",
+    "alertNoInput": "Please enter text or upload an image."
+  }
+  

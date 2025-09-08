@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
 import { Image, Mic, Send } from "lucide-react";
+import { useTranslation } from "react-i18next"; // NEW: Import the hook
 
 export default function ChatInput({ onSend }) {
+  const { t } = useTranslation(); // NEW: Get the translation function
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
   const [listening, setListening] = useState(false);
@@ -16,7 +18,8 @@ export default function ChatInput({ onSend }) {
   // Voice input using Web Speech API
   const handleMicClick = () => {
     if (!("webkitSpeechRecognition" in window)) {
-      alert("Your browser does not support speech recognition.");
+      // NEW: Use translated alert
+      alert(t("alertNoMicSupport"));
       return;
     }
 
@@ -48,7 +51,8 @@ export default function ChatInput({ onSend }) {
   // Send message
   const handleSend = () => {
     if (!text.trim() && !image) {
-      alert("Please enter text or upload an image.");
+      // NEW: Use translated alert
+      alert(t("alertNoInput"));
       return;
     }
 
@@ -84,7 +88,8 @@ export default function ChatInput({ onSend }) {
         rows="1"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Type your message..."
+        // NEW: Use translated placeholder
+        placeholder={t("chatPlaceholder")}
         className="flex-1 resize-none border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
       />
 
