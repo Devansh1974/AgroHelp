@@ -1,41 +1,32 @@
 // src/components/ChatMessage.jsx
 
+// NEW: We no longer need useLanguage here, as the audio is pre-rendered by the backend.
 import { User, Sparkles, Volume2 } from "lucide-react";
-import { useLanguage } from "../context/LanguageContext";
 import { useState } from "react";
 
 export default function ChatMessage({ message }) {
   const isUser = message.sender === "user";
-  const { language } = useLanguage();
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  // NEW: Changed state name for clarity
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const handleSpeak = () => {
-    window.speechSynthesis.cancel();
-
-    if (isSpeaking) {
-      setIsSpeaking(false);
-      return;
+  // NEW: This function is now a simple "Replay" button.
+  // It plays the audio file that we have already received from the backend.
+  const handleReplay = () => {
+    // Check if there's audio data in the message object
+    if (message.audio) {
+      const audio = new Audio(message.audio);
+      
+      // Update our button's state based on audio events for visual feedback
+      audio.onplay = () => setIsPlaying(true);
+      audio.onended = () => setIsPlaying(false);
+      audio.onerror = () => setIsPlaying(false); // Handle potential errors
+      
+      audio.play();
     }
-
-    const utterance = new SpeechSynthesisUtterance(message.text);
-    const langMap = {
-      en: "en-US",
-      hi: "hi-IN",
-      te: "te-IN",
-    };
-    utterance.lang = langMap[language] || "en-US";
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
   };
 
   return (
-    // NEW: Main container now aligns the entire message to the start (left) or end (right)
     <div className={`flex items-start gap-3 my-4 ${isUser ? "justify-end" : "justify-start"}`}>
-      
-      {/* Icon */}
-      {/* NEW: Use 'order-2' for user to place the icon after the message bubble */}
       <div
         className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
           isUser ? "bg-gray-300 order-2" : "bg-green-500 text-white"
@@ -44,12 +35,9 @@ export default function ChatMessage({ message }) {
         {isUser ? <User size={18} /> : <Sparkles size={18} />}
       </div>
 
-      {/* NEW: This is the main content bubble */}
       <div
         className={`flex flex-col p-3 rounded-2xl max-w-lg ${
-          isUser 
-            ? "bg-green-100 order-1" // User messages have a green background
-            : "bg-white border"      // AI messages have a white background with a border
+          isUser ? "bg-green-100 order-1" : "bg-white border"
         }`}
       >
         {message.image && (
@@ -63,17 +51,17 @@ export default function ChatMessage({ message }) {
           {message.text}
         </p>
 
-        {/* The "Listen" button, which only appears for AI messages */}
-        {!isUser && message.text && (
+        {/* NEW: The "Listen/Replay" button now only appears if the message object has audio */}
+        {!isUser && message.audio && (
           <div className="mt-3">
             <button
-              onClick={handleSpeak}
+              onClick={handleReplay}
               className={`flex items-center gap-2 text-sm text-gray-600 p-2 rounded-lg hover:bg-gray-200 ${
-                isSpeaking ? "bg-green-200 text-green-800" : ""
+                isPlaying ? "bg-green-200 text-green-800" : ""
               }`}
             >
               <Volume2 size={16} />
-              <span>{isSpeaking ? "Listening..." : "Listen"}</span>
+              <span>{isPlaying ? "Playing..." : "Listen"}</span>
             </button>
           </div>
         )}
@@ -81,3 +69,4 @@ export default function ChatMessage({ message }) {
     </div>
   );
 }
+
