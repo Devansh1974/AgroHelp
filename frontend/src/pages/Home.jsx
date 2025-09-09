@@ -8,16 +8,12 @@ import ChatMessage from "../components/ChatMessage";
 import { useLanguage } from "../context/LanguageContext";
 import { useTranslation } from "react-i18next";
 import { Menu } from "lucide-react";
-// NEW: Import the LanguageSelector to use it in the header
 import LanguageSelector from "../components/LanguageSelector";
 
-// NEW: The ChatHeader component is now updated to include the LanguageSelector
 function ChatHeader({ onMenuClick }) {
   const { t } = useTranslation();
   return (
-    // Use justify-between to push items to opposite ends
     <header className="flex items-center justify-between p-4 border-b bg-white/50 backdrop-blur-sm">
-      {/* Left side of the header */}
       <div className="flex items-center">
         <button onClick={onMenuClick} className="lg:hidden mr-4 p-2 rounded-full hover:bg-gray-200">
           <Menu size={24} />
@@ -25,7 +21,6 @@ function ChatHeader({ onMenuClick }) {
         <h1 className="text-xl font-semibold text-gray-800">{t("appTitle")}</h1>
       </div>
       
-      {/* Right side of the header */}
       <div>
         <LanguageSelector />
       </div>
@@ -47,7 +42,7 @@ export default function Home() {
   }, [language, i18n]);
 
   const handleSend = async (message) => {
-    // ... (This function's logic does not need to change, so it's omitted for brevity)
+    // This function's logic is correct and does not need to change.
     const userMessage = {
       sender: "user",
       text: message.text,
@@ -86,13 +81,17 @@ export default function Home() {
     <div className="flex h-screen bg-gray-50 relative overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
 
-      <div className="flex flex-col flex-1">
+      {/* NEW: Added `min-w-0`. This is the critical fix for responsiveness. */}
+      {/* It allows this flex container to shrink properly on small screens. */}
+      <div className="flex flex-col flex-1 min-w-0">
         <ChatHeader onMenuClick={() => setSidebarOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto p-4">
+        {/* NEW: Changed padding to be smaller on mobile (`p-2`) and larger on desktop (`md:p-4`) */}
+        <main className="flex-1 overflow-y-auto p-2 md:p-4">
           {messages.length === 0 && !isLoading && (
             <div className="h-full flex items-center justify-center">
-              <h1 className="text-2xl text-gray-400">{t("appSubtitle")}</h1>
+              {/* NEW: Added `text-center` for better look on mobile */}
+              <h1 className="text-2xl text-gray-400 text-center">{t("appSubtitle")}</h1>
             </div>
           )}
 
@@ -109,7 +108,8 @@ export default function Home() {
           )}
         </main>
 
-        <div className="p-4 bg-gray-50">
+        {/* The padding here provides a nice space for the floating input */}
+        <div className="p-4 bg-transparent">
           <ChatInput onSend={handleSend} />
         </div>
       </div>
