@@ -1,27 +1,24 @@
 // src/components/ChatMessage.jsx
 
-// NEW: We no longer need useLanguage here, as the audio is pre-rendered by the backend.
-import { User, Sparkles, Volume2 } from "lucide-react";
-import { useState } from "react";
+// NEW: We now import the central audio controller and translation hooks
+import { User, Sparkles, Volume2, Play, Pause } from "lucide-react";
+import { useAudio } from "../context/AudioContext";
+import { useTranslation } from "react-i18next";
 
 export default function ChatMessage({ message }) {
   const isUser = message.sender === "user";
-  // NEW: Changed state name for clarity
-  const [isPlaying, setIsPlaying] = useState(false);
+  // NEW: Get the central audio player's state and controls from the context
+  const { isPlaying, currentTrackSrc, playPause } = useAudio();
+  const { t } = useTranslation();
 
-  // NEW: This function is now a simple "Replay" button.
-  // It plays the audio file that we have already received from the backend.
-  const handleReplay = () => {
-    // Check if there's audio data in the message object
+  // NEW: This variable checks if THIS specific message is the one currently playing
+  // in the central audio player. This is the key to synchronizing the button.
+  const isThisMessagePlaying = isPlaying && currentTrackSrc === message.audio;
+
+  // The button's only job is to tell the central player to play/pause THIS message's audio
+  const handlePlayPauseClick = () => {
     if (message.audio) {
-      const audio = new Audio(message.audio);
-      
-      // Update our button's state based on audio events for visual feedback
-      audio.onplay = () => setIsPlaying(true);
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => setIsPlaying(false); // Handle potential errors
-      
-      audio.play();
+      playPause(message.audio);
     }
   };
 
@@ -51,17 +48,18 @@ export default function ChatMessage({ message }) {
           {message.text}
         </p>
 
-        {/* NEW: The "Listen/Replay" button now only appears if the message object has audio */}
+        {/* The button now uses the central player's state for its appearance and actions */}
         {!isUser && message.audio && (
           <div className="mt-3">
             <button
-              onClick={handleReplay}
+              onClick={handlePlayPauseClick}
               className={`flex items-center gap-2 text-sm text-gray-600 p-2 rounded-lg hover:bg-gray-200 ${
-                isPlaying ? "bg-green-200 text-green-800" : ""
+                isThisMessagePlaying ? "bg-green-200 text-green-800" : ""
               }`}
             >
-              <Volume2 size={16} />
-              <span>{isPlaying ? "Playing..." : "Listen"}</span>
+              {/* The icon and text are now perfectly in sync with the central player */}
+              {isThisMessagePlaying ? <Pause size={16} /> : <Play size={16} />}
+              <span>{isThisMessagePlaying ? t("pause") : t("play")}</span>
             </button>
           </div>
         )}
