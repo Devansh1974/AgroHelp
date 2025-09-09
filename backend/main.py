@@ -98,4 +98,3 @@ async def predict(
 @app.get("/")
 def read_root():
     return {"message": "Welcome! The Gemini Vision API is ready. Go to /docs to test."}
-
