@@ -12,13 +12,11 @@ import LanguageSelector from "../components/LanguageSelector";
 import { useAudio } from "../context/AudioContext";
 import AudioToggle from "../components/AudioToggle";
 
-// This is the ChatHeader component where the fix is located
 function ChatHeader({ onMenuClick }) {
   const { t } = useTranslation();
   return (
     <header className="flex items-center justify-between p-4 border-b bg-white/50 backdrop-blur-sm">
       <div className="flex items-center gap-2">
-        {/* NEW: Corrected the typo from 'onMenu-Click' to 'onMenuClick' */}
         <button onClick={onMenuClick} className="lg:hidden p-2 rounded-full hover:bg-gray-200">
           <Menu size={24} />
         </button>
@@ -39,7 +37,8 @@ export default function Home() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { language } = useLanguage();
   const { t, i18n } = useTranslation();
-  const { isAutoplayEnabled } = useAudio();
+  // NEW: Get the playPause function from our central audio player
+  const { isAutoplayEnabled, playPause } = useAudio();
 
   useEffect(() => {
     i18n.changeLanguage(language);
@@ -78,9 +77,10 @@ export default function Home() {
       };
       setMessages((prev) => [...prev, aiMessage]);
 
+      // NEW: The autoplay feature now uses our central playPause function.
+      // This will prevent the "double voice" issue.
       if (isAutoplayEnabled && aiMessage.audio) {
-        const audio = new Audio(aiMessage.audio);
-        audio.play();
+        playPause(aiMessage.audio);
       }
     } catch (err) {
       const errorMessage = "Connection Error: Could not reach the backend. Is it running?";
