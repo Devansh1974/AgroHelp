@@ -1,14 +1,35 @@
 {
-    "appTitle": "Farmer AI Assistant",
-    "appSubtitle": "Upload an image of a plant leaf to detect diseases.",
-    "newChat": "New Chat",
-    "searchChats": "Search Chats",
-    "history": "History",
-    "analyzeImage": "Analyze Image",
-    "analyzing": "Analyzing...",
-    "aiIsThinking": "AI is thinking...",
-    "chatPlaceholder": "Type your message or ask a question...",
-    "alertNoMicSupport": "Your browser does not support speech recognition.",
-    "alertNoInput": "Please enter text or upload an image."
-  }
-  
+  "appTitle": "AgroHelp",
+  "appSubtitle": "AI-powered insights for your crops",
+  "newChat": "New Chat",
+  "searchChats": "Search Chats",
+  "history": "History",
+  "analyzeImage": "Analyze Image",
+  "analyzing": "Analyzing...",
+  "aiIsThinking": "AI is thinking...",
+  "chatPlaceholder": "Type your message or ask a question...",
+  "alertNoMicSupport": "Your browser does not support speech recognition.",
+  "alertNoInput": "Please enter text or upload an image.",
+  "play": "Play",
+  "pause": "Pause",
+  "heroPrefix": "Introducing ",
+  "tryCTA": "Try AgroHelp",
+  "languagePrompt": "Choose your language",
+  "locationPrompt": "Allow location for local recommendations",
+  "whyChoose": "Why Choose",
+  "cropHealthTitle": "Crop Health",
+  "cropHealthDesc": "AI detects crop issues early and suggests solutions.",
+  "weatherTitle": "Weather Alerts",
+  "weatherDesc": "Hyperlocal real-time weather predictions.",
+  "marketTitle": "Market Prices",
+  "marketDesc": "Stay ahead with daily mandi price updates.",
+  "marketplaceTitle": "Smart Marketplace",
+  "marketplaceDesc": "Connect directly with buyers and suppliers.",
+  "rotatingTexts": [
+    "Crop Health",
+    "Weather Alerts",
+    "Market Prices",
+    "Smart Recommendations"
+  ]
+}
+
