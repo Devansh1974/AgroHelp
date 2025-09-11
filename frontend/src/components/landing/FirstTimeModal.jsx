@@ -4,13 +4,12 @@ import { useTranslation } from "react-i18next";
 
 export default function FirstTimeModal() {
   const { language, setLanguage } = useLanguage();
-  const { t } = useTranslation();
+  // NEW: We need the i18n instance to change the language in real-time
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [locationName, setLocationName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // This hook checks if the user has visited before.
-  // If not, it opens the modal.
   useEffect(() => {
     const savedLang = localStorage.getItem("agro_lang");
     if (!savedLang) {
@@ -29,12 +28,10 @@ export default function FirstTimeModal() {
         const { latitude, longitude } = pos.coords;
         localStorage.setItem("agro_coords", JSON.stringify({ latitude, longitude }));
         try {
-          // Use a reverse geocoding service to get a human-readable location
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const data = await res.json();
           const city = data.address.city || data.address.town || data.address.village || "";
           const state = data.address.state || "";
-          // Clean up the location name to avoid leading/trailing commas
           setLocationName(`${city}, ${state}`.replace(/^,|,$/g, '')); 
         } catch (err) {
           console.error("Reverse geocoding failed", err);
@@ -49,20 +46,26 @@ export default function FirstTimeModal() {
     );
   };
 
-  // This function saves the user's choices and closes the modal
   const applyAndClose = () => {
     setOpen(false);
     localStorage.setItem("agro_lang", language);
   };
 
-  // If the modal shouldn't be open, render nothing
+  // NEW: This function now handles both updating the state and changing the UI language
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setLanguage(newLang); // Update the context (and localStorage)
+    i18n.changeLanguage(newLang); // Instantly change the language for the entire app
+  };
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white max-w-md w-full rounded-lg p-6 shadow-lg">
         <h3 className="text-lg font-semibold mb-3">{t("languagePrompt")}</h3>
-        <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full border rounded p-2 mb-4">
+        {/* NEW: The select now uses the new handler */}
+        <select value={language} onChange={handleLanguageChange} className="w-full border rounded p-2 mb-4">
           <option value="en">English</option>
           <option value="hi">हिन्दी</option>
           <option value="te">తెలుగు</option>
@@ -83,3 +86,4 @@ export default function FirstTimeModal() {
     </div>
   );
 }
+
