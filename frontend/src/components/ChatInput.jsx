@@ -1,23 +1,23 @@
 import { useState, useRef, useEffect } from "react";
-// NEW: Import the X icon for the remove image button
-import { Image, Mic, Send, X } from "lucide-react";
+import { Image, Mic, Send, X, Camera, Voicemail } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function ChatInput({ onSend }) {
   const { t } = useTranslation();
+  const { language } = useLanguage(); 
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
-  // NEW: Create a ref to access the textarea element directly
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // NEW: This hook automatically adjusts the textarea's height as you type
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = "auto"; // Reset height to recalculate
-      textarea.style.height = `${textarea.scrollHeight}px`; // Set to scroll height
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
     }
   }, [text]);
 
@@ -27,34 +27,42 @@ export default function ChatInput({ onSend }) {
   };
 
   const handleMicClick = () => {
-    // ... (This function's logic is unchanged)
     if (!("webkitSpeechRecognition" in window)) {
       alert(t("alertNoMicSupport"));
       return;
     }
-    if (!recognitionRef.current) {
-      recognitionRef.current = new window.webkitSpeechRecognition();
-      recognitionRef.current.lang = "en-IN";
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.onresult = (event) => setText(event.results[0][0].transcript);
-      recognitionRef.current.onerror = (err) => {
-        console.error("Speech recognition error", err);
-        setListening(false);
-      };
-      recognitionRef.current.onend = () => setListening(false);
-    }
     if (listening) {
       recognitionRef.current.stop();
       setListening(false);
-    } else {
-      recognitionRef.current.start();
-      setListening(true);
+      return;
     }
+    const langMap = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
+    if (!recognitionRef.current) {
+      const recognition = new window.webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onresult = (event) => {
+        const spokenText = event.results[0][0].transcript;
+        setText(spokenText);
+        const message = { text: spokenText, image: null };
+        onSend(message);
+        setText(""); 
+      };
+      recognition.onerror = (err) => {
+        console.error("Speech recognition error", err);
+        setListening(false);
+      };
+      recognition.onend = () => {
+        setListening(false);
+      };
+      recognitionRef.current = recognition;
+    }
+    recognitionRef.current.lang = langMap[language] || 'en-IN';
+    recognitionRef.current.start();
+    setListening(true);
   };
 
   const handleSend = () => {
-    // ... (This function's logic is unchanged)
     if (!text.trim() && !image) {
       alert(t("alertNoInput"));
       return;
@@ -66,12 +74,37 @@ export default function ChatInput({ onSend }) {
   };
 
   return (
-    // NEW: Redesigned container to create the floating "pill" effect
     <div className="max-w-4xl mx-auto">
-      <div className="relative flex flex-col gap-2 bg-white p-3 border rounded-3xl shadow-lg">
-        {/* NEW: Image preview now has a remove button */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <button 
+          onClick={() => fileInputRef.current?.click()}
+          className="flex flex-col items-center justify-center p-4 bg-white border rounded-2xl shadow-lg hover:bg-green-50 transition-colors"
+        >
+          <Camera size={28} className="text-green-600 mb-1" />
+          {/* NEW: Button text now uses the translation function */}
+          <span className="font-semibold text-gray-700">{t("uploadPhoto")}</span>
+        </button>
+        <input 
+          type="file" 
+          accept="image/*" 
+          className="hidden" 
+          ref={fileInputRef} 
+          onChange={handleImageChange} 
+        />
+        <button 
+          onClick={handleMicClick}
+          className={`flex flex-col items-center justify-center p-4 bg-white border rounded-2xl shadow-lg hover:bg-green-50 transition-colors ${listening ? 'ring-2 ring-red-500' : ''}`}
+        >
+          <Voicemail size={28} className={`mb-1 ${listening ? 'text-red-500' : 'text-green-600'}`} />
+          <span className={`font-semibold ${listening ? 'text-red-500 animate-pulse' : 'text-gray-700'}`}>
+            {/* NEW: Button text now uses the translation function */}
+            {listening ? t("listening") : t("askWithVoice")}
+          </span>
+        </button>
+      </div>
+      <div className="relative flex flex-col gap-2">
         {image && (
-          <div className="relative w-20 h-20 ml-14 mb-2">
+          <div className="relative w-16 h-16 ml-2 mb-2">
             <img
               src={URL.createObjectURL(image)}
               alt="preview"
@@ -85,36 +118,15 @@ export default function ChatInput({ onSend }) {
             </button>
           </div>
         )}
-
-        {/* Main input row */}
-        <div className="flex items-end gap-2">
-          {/* Image Upload Button */}
-          <label className="cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-green-100 hover:bg-green-200 flex-shrink-0">
-            <Image size={20} />
-            <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-          </label>
-
-          {/* NEW: Textarea now uses the ref and has new styling for auto-resizing */}
+        <div className="flex items-end gap-1 bg-white p-2 border rounded-xl shadow-lg">
           <textarea
             ref={textareaRef}
             rows="1"
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t("chatPlaceholder")}
-            className="flex-1 resize-none border-none focus:ring-0 bg-transparent p-2 max-h-48 overflow-y-auto"
+            className="flex-1 resize-none border-none focus:ring-0 bg-transparent py-1 px-2 max-h-24 overflow-y-auto placeholder:text-gray-400"
           />
-
-          {/* Mic Button */}
-          <button
-            onClick={handleMicClick}
-            className={`w-10 h-10 flex items-center justify-center rounded-full flex-shrink-0 ${
-              listening ? "bg-red-200" : "bg-gray-100"
-            } hover:bg-green-200`}
-          >
-            <Mic size={20} />
-          </button>
-
-          {/* Send Button */}
           <button
             onClick={handleSend}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 flex-shrink-0"
