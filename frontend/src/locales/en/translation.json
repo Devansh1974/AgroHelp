@@ -32,6 +32,9 @@
     "Smart Recommendations"
   ],
   "copy": "Copy",
-  "copied": "Copied!"
+  "copied": "Copied!",
+  "uploadPhoto": "Upload Photo",
+  "askWithVoice": "Ask with Voice",
+  "listening": "Listening..."
 }
 
