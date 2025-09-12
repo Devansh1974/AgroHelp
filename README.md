@@ -43,7 +43,7 @@ Helping small farmers make informed decisions can:
 
 **Frontend**: React.js, Tailwind CSS, Web Speech API, Web Audio API  
 **Backend**: FastAPI (Python)  
-**Database**: PostgreSQL  
+**Database**: PostgreSQL 
 
 **AI/ML & Processing Pipelines**:  
 - Core Frameworks: PyTorch, TensorFlow  
@@ -52,9 +52,8 @@ Helping small farmers make informed decisions can:
 - Audio Processing: Bandpass Filter, Spectral Gating, AGC  
 
 **APIs**:  
-- Gemini API (NLU & Translation)  
-- Google STT (Dialect-Aware Speech-to-Text)  
-- Hugging Face (Custom Model Inference)  
+- API for NLU & Translation. 
+- Google STT (Dialect-Aware Speech-to-Text)    
 - Weather & Market Price APIs  
 
 **Deployment & DevOps**: Docker, Kubernetes, GitHub Actions, AWS/GCP  
