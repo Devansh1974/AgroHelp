@@ -3,4 +3,7 @@ uvicorn[standard]
 python-multipart
 google-generativeai
 Pillow
+python-dotenv
 fastapi-cors
+requests
+pydub
