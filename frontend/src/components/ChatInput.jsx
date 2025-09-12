@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Image, Mic, Send, X, Camera, Voicemail } from "lucide-react";
+import { Image, Mic, Send, X, Camera } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function ChatInput({ onSend }) {
   const { t } = useTranslation();
-  const { language } = useLanguage(); 
+  const { language } = useLanguage();
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
   const [listening, setListening] = useState(false);
@@ -21,44 +21,67 @@ export default function ChatInput({ onSend }) {
     }
   }, [text]);
 
+  // This cleanup effect ensures recognition is stopped if the component unmounts
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) setImage(file);
   };
 
+  // NEW: This is the updated, more robust microphone logic
   const handleMicClick = () => {
     if (!("webkitSpeechRecognition" in window)) {
       alert(t("alertNoMicSupport"));
       return;
     }
+
+    // If the mic is currently listening, stop it and exit.
     if (listening) {
-      recognitionRef.current.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
       setListening(false);
       return;
     }
+    
+    // Start a new listening session
     const langMap = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
-    if (!recognitionRef.current) {
-      const recognition = new window.webkitSpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.onresult = (event) => {
-        const spokenText = event.results[0][0].transcript;
-        setText(spokenText);
-        const message = { text: spokenText, image: null };
-        onSend(message);
-        setText(""); 
-      };
-      recognition.onerror = (err) => {
-        console.error("Speech recognition error", err);
-        setListening(false);
-      };
-      recognition.onend = () => {
-        setListening(false);
-      };
-      recognitionRef.current = recognition;
-    }
-    recognitionRef.current.lang = langMap[language] || 'en-IN';
-    recognitionRef.current.start();
+    
+    // Create a brand new recognition instance every time to prevent state errors
+    const recognition = new window.webkitSpeechRecognition();
+    recognitionRef.current = recognition; // Save the instance so we can stop it
+    
+    recognition.lang = langMap[language] || 'en-IN';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    // When speech is recognized, auto-send the message
+    recognition.onresult = (event) => {
+      const spokenText = event.results[0][0].transcript;
+      setText(spokenText); // Show text briefly in the input
+      const message = { text: spokenText, image: null };
+      onSend(message);
+      setText(""); // Clear the input after sending
+    };
+
+    recognition.onerror = (err) => {
+      console.error("Speech recognition error", err);
+      // The 'onend' event will fire regardless, so it will handle cleanup
+    };
+    
+    // The onend event is the definitive "it's over" signal
+    recognition.onend = () => {
+      setListening(false);
+    };
+
+    recognition.start();
     setListening(true);
   };
 
@@ -76,28 +99,28 @@ export default function ChatInput({ onSend }) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <button 
+        <button
           onClick={() => fileInputRef.current?.click()}
           className="flex flex-col items-center justify-center p-4 bg-white border rounded-2xl shadow-lg hover:bg-green-50 transition-colors"
         >
           <Camera size={28} className="text-green-600 mb-1" />
-          {/* NEW: Button text now uses the translation function */}
           <span className="font-semibold text-gray-700">{t("uploadPhoto")}</span>
         </button>
-        <input 
-          type="file" 
-          accept="image/*" 
-          className="hidden" 
-          ref={fileInputRef} 
-          onChange={handleImageChange} 
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleImageChange}
         />
-        <button 
+        <button
           onClick={handleMicClick}
-          className={`flex flex-col items-center justify-center p-4 bg-white border rounded-2xl shadow-lg hover:bg-green-50 transition-colors ${listening ? 'ring-2 ring-red-500' : ''}`}
+          className={`flex flex-col items-center justify-center p-4 bg-white border rounded-2xl shadow-lg hover:bg-green-50 transition-colors ${
+            listening ? "ring-2 ring-red-500" : ""
+          }`}
         >
-          <Voicemail size={28} className={`mb-1 ${listening ? 'text-red-500' : 'text-green-600'}`} />
-          <span className={`font-semibold ${listening ? 'text-red-500 animate-pulse' : 'text-gray-700'}`}>
-            {/* NEW: Button text now uses the translation function */}
+          <Mic size={28} className={`mb-1 ${listening ? "text-red-500" : "text-green-600"}`} />
+          <span className={`font-semibold ${listening ? "text-red-500 animate-pulse" : "text-gray-700"}`}>
             {listening ? t("listening") : t("askWithVoice")}
           </span>
         </button>

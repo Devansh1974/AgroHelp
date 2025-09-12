@@ -5,7 +5,6 @@ export default function LocationDisplay() {
   const [locationName, setLocationName] = useState("");
 
   useEffect(() => {
-    // This function runs when the component first mounts
     const fetchLocationName = async () => {
       const savedCoords = localStorage.getItem("agro_coords");
       if (savedCoords) {
@@ -13,29 +12,32 @@ export default function LocationDisplay() {
           const coords = JSON.parse(savedCoords);
           const { latitude, longitude } = coords;
 
-          // Use the free Nominatim API for reverse geocoding
+          // NEW: Instead of calling OpenStreetMap directly, we call our own backend's
+          // secure proxy endpoint. This permanently fixes the CORS error.
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            `http://127.0.0.1:8000/get-location-name?lat=${latitude}&lon=${longitude}`
           );
-          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error('Backend responded with an error');
+          }
 
-          // Extract a clean location name (e.g., "Bengaluru, Karnataka")
-          const city = data.address.city || data.address.town || data.address.village || "";
-          const state = data.address.state || "";
-          const name = `${city}, ${state}`.replace(/^,|,$/g, ""); // Removes leading/trailing commas
+          const data = await response.json();
+          const name = data.locationName;
 
           if (name) {
             setLocationName(name);
           }
         } catch (e) {
           console.error("Failed to fetch location name:", e);
-          setLocationName("Location saved");
+          // Set a fallback message in case the backend call fails
+          setLocationName("Location enabled"); 
         }
       }
-    };
+    }
 
     fetchLocationName();
-  }, []); // The empty array means this effect runs only once
+  }, []); // The empty array ensures this effect runs only once
 
   if (!locationName) {
     return null; // Don't render anything if there's no location
@@ -48,3 +50,4 @@ export default function LocationDisplay() {
     </div>
   );
 }
+

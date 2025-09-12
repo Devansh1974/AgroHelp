@@ -11,6 +11,7 @@ import base64
 import requests
 from urllib.parse import quote
 from typing import Optional
+# NEW: Corrected the typo from 'pub' to 'pydub'
 from pydub import AudioSegment
 import re
 
@@ -29,9 +30,10 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# --- Your existing LANGUAGE_MAP, TTS functions, and splitter are all correct ---
 LANGUAGE_MAP = {
-    "en": {"name": "English", "tts_code": "en"}, "hi": {"name": "Hindi", "tts_code": "hi"}, "te": {"name": "Telugu", "tts_code": "te"},
+    "en": {"name": "English", "tts_code": "en"},
+    "hi": {"name": "Hindi", "tts_code": "hi"},
+    "te": {"name": "Telugu", "tts_code": "te"},
 }
 def get_tts_audio_from_text(text: str, lang_code: str):
     if not text or not text.strip(): return None
@@ -46,8 +48,7 @@ def robust_chunk_splitter(text: str, chunk_size: int = 180):
     for s in sentences:
         if len(s) <= chunk_size: chunks.append(s)
         else:
-            sub_s = s.split(',')
-            curr_chunk = ""
+            sub_s = s.split(','); curr_chunk = ""
             for i, p in enumerate(sub_s):
                 p_with_comma = p + ("," if i < len(sub_s) - 1 else "")
                 if len(curr_chunk) + len(p_with_comma) <= chunk_size: curr_chunk += p_with_comma
@@ -55,20 +56,31 @@ def robust_chunk_splitter(text: str, chunk_size: int = 180):
             if curr_chunk.strip(): chunks.append(curr_chunk.strip())
     return [c.strip() for c in chunks if c.strip()]
 def get_weather_forecast(lat: str, lon: str):
-    if not OPENWEATHER_API_KEY:
-        print("DEBUG: OpenWeatherMap API key is missing.")
-        return "Weather data is unavailable."
+    if not OPENWEATHER_API_KEY: return "Weather data is unavailable."
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}&units=metric"
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        description = data['weather'][0]['description']
-        temp = data['main']['temp']
+        response = requests.get(url); response.raise_for_status(); data = response.json()
+        description = data['weather'][0]['description']; temp = data['main']['temp']
         return f"Current weather is {description} with a temperature of {temp}°C."
     except Exception as e:
-        print(f"DEBUG: Weather API call failed. URL: {url}, Error: {e}")
-        return "Could not retrieve weather data."
+        print(f"Weather API error: {e}"); return "Could not retrieve weather data."
+
+# This is the crucial proxy endpoint that was missing
+@app.get("/get-location-name")
+async def get_location_name(lat: str, lon: str):
+    url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
+    headers = {'User-Agent': 'AgroHelpApp/1.0'}
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        city = data.get('address', {}).get('city') or data.get('address', {}).get('town') or data.get('address', {}).get('village') or ""
+        state = data.get('address', {}).get('state') or ""
+        location_name = f"{city}, {state}".strip(", ")
+        return {"locationName": location_name}
+    except Exception as e:
+        print(f"Reverse geocoding failed: {e}")
+        return {"locationName": ""}
 
 @app.get("/test-weather")
 async def test_weather(lat: str, lon: str):
@@ -86,17 +98,11 @@ async def predict(
     try:
         language_info = LANGUAGE_MAP.get(language, LANGUAGE_MAP["en"])
         language_name = language_info["name"]
-        
-        weather_context = ""
-        if lat and lon:
-            weather_context = get_weather_forecast(lat, lon)
-        
+        weather_context = get_weather_forecast(lat, lon) if lat and lon else ""
         model = genai.GenerativeModel("gemini-1.5-flash-latest")
-
         if file and file.filename and file.size > 0:
             image_bytes = await file.read()
             image = Image.open(io.BytesIO(image_bytes))
-            # NEW: This is the complete, detailed prompt for image analysis
             prompt = f"""You are an expert agricultural assistant for Indian farmers.
             CONTEXT: The user is located where the {weather_context}.
             USER'S QUESTION: "{text if text else 'Please analyze this image.'}"
@@ -109,17 +115,13 @@ async def predict(
             response = model.generate_content([prompt, image])
         else:
             if not text: return {"analysis": "Please ask a question or upload an image.", "audioContent": None}
-            # NEW: This is the complete, detailed prompt for text-only questions
             prompt = f"""You are an expert agricultural assistant for Indian farmers.
             CONTEXT: The user is located where the {weather_context}.
             USER'S QUESTION: "{text}"
             Provide a helpful, concise answer. Your advice MUST consider the weather context. 
             Use short, simple sentences and Markdown formatting. Respond ONLY in the {language_name} language."""
             response = model.generate_content(prompt)
-
         analysis_text = response.text
-
-        # --- Audio generation logic is unchanged ---
         chunks = robust_chunk_splitter(analysis_text)
         combined_audio = AudioSegment.empty()
         for chunk in chunks:
@@ -133,14 +135,12 @@ async def predict(
             combined_audio.export(final_audio_file, format="mp3")
             final_audio_file.seek(0)
             audio_base64 = base64.b64encode(final_audio_file.read()).decode("utf-8")
-        
         return {"analysis": analysis_text, "audioContent": audio_base64}
-
     except Exception as e:
         print(f"An error occurred: {e}")
         return {"error": f"An unexpected error occurred: {e}"}
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome! The Gemini Vision API with free TTS is ready."}
+    return {"message": "Welcome!"}
 
