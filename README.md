@@ -43,7 +43,7 @@ Helping small farmers make informed decisions can:
 
 **Frontend**: React.js, Tailwind CSS, Web Speech API, Web Audio API  
 **Backend**: FastAPI (Python)  
-**Database**: PostgreSQL  
+**Database**: PostgreSQL 
 
 **AI/ML & Processing Pipelines**:  
 - Core Frameworks: PyTorch, TensorFlow  
