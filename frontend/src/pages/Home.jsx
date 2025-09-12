@@ -7,21 +7,30 @@ import ChatInput from "../components/ChatInput";
 import ChatMessage from "../components/ChatMessage";
 import { useLanguage } from "../context/LanguageContext";
 import { useTranslation } from "react-i18next";
-import { Menu } from "lucide-react";
+// NEW: Import the Leaf icon for the logo
+import { Menu, Leaf } from "lucide-react";
 import LanguageSelector from "../components/LanguageSelector";
 import { useAudio } from "../context/AudioContext";
 import AudioToggle from "../components/AudioToggle";
 
+// NEW: This is the upgraded, unified header component
 function ChatHeader({ onMenuClick }) {
   const { t } = useTranslation();
   return (
-    <header className="flex items-center justify-between p-4 border-b bg-white/50 backdrop-blur-sm">
+    // The styling now matches the landing page header
+    <header className="flex items-center justify-between px-4 py-3 border-b bg-white/70 backdrop-blur-md">
+      {/* Left side: Hamburger menu (mobile) and App Logo/Title */}
       <div className="flex items-center gap-2">
         <button onClick={onMenuClick} className="lg:hidden p-2 rounded-full hover:bg-gray-200">
           <Menu size={24} />
         </button>
-        <h1 className="text-xl font-semibold text-gray-800">{t("appTitle")}</h1>
+        {/* The logo and title from the landing page */}
+        <div className="flex items-center gap-2">
+          <Leaf className="text-green-600" size={28} />
+          <span className="font-bold text-xl text-green-700">{t("appTitle")}</span>
+        </div>
       </div>
+      {/* Right side: Autoplay Toggle and Language Selector */}
       <div className="flex items-center gap-2">
         <AudioToggle />
         <LanguageSelector />
@@ -37,7 +46,6 @@ export default function Home() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { language } = useLanguage();
   const { t, i18n } = useTranslation();
-  // NEW: Get the playPause function from our central audio player
   const { isAutoplayEnabled, playPause } = useAudio();
 
   useEffect(() => {
@@ -45,6 +53,7 @@ export default function Home() {
   }, [language, i18n]);
 
   const handleSend = async (message) => {
+    // This function's logic is correct and does not need to change.
     const userMessage = {
       sender: "user",
       text: message.text,
@@ -66,7 +75,6 @@ export default function Home() {
 
     try {
       const response = await axios.post("http://127.0.0.1:8000/predict", formData);
-
       const aiResponseText = response.data.analysis || response.data.error || "Sorry, I couldn't get a response.";
       const audioContent = response.data.audioContent;
 
@@ -77,8 +85,6 @@ export default function Home() {
       };
       setMessages((prev) => [...prev, aiMessage]);
 
-      // NEW: The autoplay feature now uses our central playPause function.
-      // This will prevent the "double voice" issue.
       if (isAutoplayEnabled && aiMessage.audio) {
         playPause(aiMessage.audio);
       }
