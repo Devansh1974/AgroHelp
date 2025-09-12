@@ -52,9 +52,8 @@ Helping small farmers make informed decisions can:
 - Audio Processing: Bandpass Filter, Spectral Gating, AGC  
 
 **APIs**:  
-- Gemini API (NLU & Translation)  
-- Google STT (Dialect-Aware Speech-to-Text)  
-- Hugging Face (Custom Model Inference)  
+- API for NLU & Translation. 
+- Google STT (Dialect-Aware Speech-to-Text)    
 - Weather & Market Price APIs  
 
 **Deployment & DevOps**: Docker, Kubernetes, GitHub Actions, AWS/GCP  
