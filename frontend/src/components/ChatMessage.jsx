@@ -1,24 +1,49 @@
 // src/components/ChatMessage.jsx
 
-// NEW: We now import the central audio controller and translation hooks
-import { User, Sparkles, Volume2, Play, Pause } from "lucide-react";
+import { User, Sparkles, Volume2, Play, Pause, Copy } from "lucide-react";
 import { useAudio } from "../context/AudioContext";
 import { useTranslation } from "react-i18next";
+import { useTyping } from "../hooks/useTyping";
+import ReactMarkdown from "react-markdown";
+// NEW: We now need the useEffect hook
+import { useState, useEffect } from "react";
 
 export default function ChatMessage({ message }) {
   const isUser = message.sender === "user";
-  // NEW: Get the central audio player's state and controls from the context
   const { isPlaying, currentTrackSrc, playPause } = useAudio();
   const { t } = useTranslation();
+  const [isCopied, setIsCopied] = useState(false);
 
-  // NEW: This variable checks if THIS specific message is the one currently playing
-  // in the central audio player. This is the key to synchronizing the button.
+  const typedText = useTyping(isUser ? "" : message.text, 30);
+  
+  // NEW: We now use a dedicated state variable for typing completion
+  // This is more reliable than calculating it on every render.
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
+
+  // NEW: This effect hook reliably detects when the typing is finished.
+  useEffect(() => {
+    // When the length of the displayed text matches the full message,
+    // we set the completion state to true.
+    if (typedText.length === message.text.length && message.text.length > 0) {
+      setIsTypingComplete(true);
+    } else {
+      setIsTypingComplete(false);
+    }
+  }, [typedText, message.text]); // This runs every time the typedText changes
+
   const isThisMessagePlaying = isPlaying && currentTrackSrc === message.audio;
 
-  // The button's only job is to tell the central player to play/pause THIS message's audio
   const handlePlayPauseClick = () => {
     if (message.audio) {
       playPause(message.audio);
+    }
+  };
+
+  const handleCopy = () => {
+    if (message.text) {
+      navigator.clipboard.writeText(message.text);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
     }
   };
 
@@ -44,22 +69,35 @@ export default function ChatMessage({ message }) {
             className="w-full max-w-xs rounded-lg mb-2 border"
           />
         )}
-        <p className="text-gray-800" style={{ whiteSpace: "pre-wrap" }}>
-          {message.text}
-        </p>
+        
+        <div className="prose prose-sm max-w-none text-gray-800">
+          <ReactMarkdown>
+            {isUser ? message.text : typedText}
+          </ReactMarkdown>
+        </div>
 
-        {/* The button now uses the central player's state for its appearance and actions */}
-        {!isUser && message.audio && (
-          <div className="mt-3">
+        {!isUser && message.text && (
+          <div className="mt-3 flex items-center gap-2">
+            {message.audio && (
+              <button
+                onClick={handlePlayPauseClick}
+                className={`flex items-center gap-2 text-sm text-gray-600 p-2 rounded-lg hover:bg-gray-200 ${
+                  isThisMessagePlaying ? "bg-green-200 text-green-800" : ""
+                }`}
+              >
+                {isThisMessagePlaying ? <Pause size={16} /> : <Play size={16} />}
+                <span>{isThisMessagePlaying ? t("pause") : t("play")}</span>
+              </button>
+            )}
+
             <button
-              onClick={handlePlayPauseClick}
-              className={`flex items-center gap-2 text-sm text-gray-600 p-2 rounded-lg hover:bg-gray-200 ${
-                isThisMessagePlaying ? "bg-green-200 text-green-800" : ""
-              }`}
+              onClick={handleCopy}
+              // NEW: The button is now disabled based on our new, reliable state variable
+              disabled={!isTypingComplete}
+              className="flex items-center gap-2 text-sm text-gray-600 p-2 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {/* The icon and text are now perfectly in sync with the central player */}
-              {isThisMessagePlaying ? <Pause size={16} /> : <Play size={16} />}
-              <span>{isThisMessagePlaying ? t("pause") : t("play")}</span>
+              <Copy size={16} />
+              <span>{isCopied ? t("copied") : t("copy")}</span>
             </button>
           </div>
         )}
