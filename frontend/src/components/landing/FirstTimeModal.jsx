@@ -27,8 +27,6 @@ export default function FirstTimeModal() {
         const { latitude, longitude } = pos.coords;
         localStorage.setItem("agro_coords", JSON.stringify({ latitude, longitude }));
         try {
-          // NEW: Instead of calling OpenStreetMap directly, we call our own backend's
-          // secure proxy endpoint. This permanently fixes the CORS error.
           const res = await fetch(`http://127.0.0.1:8000/get-location-name?lat=${latitude}&lon=${longitude}`);
           
           if (!res.ok) {
@@ -75,6 +73,7 @@ export default function FirstTimeModal() {
           <option value="en">English</option>
           <option value="hi">हिन्दी</option>
           <option value="te">తెలుగు</option>
+          <option value="kn">ಕನ್ನಡ</option>
         </select>
         <div className="mb-4">
           <p className="text-sm mb-2">{t("locationPrompt")}</p>

@@ -35,14 +35,12 @@ export default function ChatInput({ onSend }) {
     if (file) setImage(file);
   };
 
-  // NEW: This is the updated, more robust microphone logic
   const handleMicClick = () => {
     if (!("webkitSpeechRecognition" in window)) {
       alert(t("alertNoMicSupport"));
       return;
     }
 
-    // If the mic is currently listening, stop it and exit.
     if (listening) {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
@@ -51,32 +49,32 @@ export default function ChatInput({ onSend }) {
       return;
     }
     
-    // Start a new listening session
-    const langMap = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
+    const langMap = { 
+      en: "en-IN", 
+      hi: "hi-IN", 
+      te: "te-IN",
+      kn: "kn-IN" 
+    };
     
-    // Create a brand new recognition instance every time to prevent state errors
     const recognition = new window.webkitSpeechRecognition();
-    recognitionRef.current = recognition; // Save the instance so we can stop it
+    recognitionRef.current = recognition;
     
     recognition.lang = langMap[language] || 'en-IN';
     recognition.continuous = false;
     recognition.interimResults = false;
 
-    // When speech is recognized, auto-send the message
     recognition.onresult = (event) => {
       const spokenText = event.results[0][0].transcript;
-      setText(spokenText); // Show text briefly in the input
+      setText(spokenText);
       const message = { text: spokenText, image: null };
       onSend(message);
-      setText(""); // Clear the input after sending
+      setText("");
     };
 
     recognition.onerror = (err) => {
       console.error("Speech recognition error", err);
-      // The 'onend' event will fire regardless, so it will handle cleanup
     };
     
-    // The onend event is the definitive "it's over" signal
     recognition.onend = () => {
       setListening(false);
     };

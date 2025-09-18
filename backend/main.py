@@ -29,7 +29,13 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
-LANGUAGE_MAP = { "en": {"name": "English", "tts_code": "en"}, "hi": {"name": "Hindi", "tts_code": "hi"}, "te": {"name": "Telugu", "tts_code": "te"} }
+# The ONLY change is adding Kannada ('kn') to this dictionary.
+LANGUAGE_MAP = {
+    "en": {"name": "English", "tts_code": "en"},
+    "hi": {"name": "Hindi", "tts_code": "hi"},
+    "te": {"name": "Telugu", "tts_code": "te"},
+    "kn": {"name": "Kannada", "tts_code": "kn"},
+}
 
 def get_tts_audio_from_text(text: str, lang_code: str):
     if not text or not text.strip(): return None
@@ -80,11 +86,7 @@ async def test_weather(lat: str, lon: str):
     weather_summary = get_weather_forecast(lat, lon); return {"weather_summary": weather_summary}
 
 def clean_text_for_speech(text: str):
-    """Removes Markdown characters like *, #, etc., for clean TTS audio."""
-    text = text.replace("**", "")
-    text = text.replace("*", "")
-    text = text.replace("##", "")
-    text = text.replace("#", "")
+    text = text.replace("**", ""); text = text.replace("*", ""); text = text.replace("##", ""); text = text.replace("#", "")
     return text
 
 @app.post("/predict")
@@ -104,7 +106,6 @@ async def predict(
         if file and file.filename and file.size > 0:
             image_bytes = await file.read()
             image = Image.open(io.BytesIO(image_bytes))
-            # NEW: The full, correct prompt is now here
             prompt = f"""You are an expert agricultural assistant for Indian farmers.
             CONTEXT: The user is located where the {weather_context}.
             USER'S QUESTION: "{text if text else 'Please analyze this image.'}"
@@ -117,7 +118,6 @@ async def predict(
             response = model.generate_content([prompt, image])
         else:
             if not text: return {"analysis": "Please ask a question or upload an image.", "audioContent": None}
-            # NEW: The full, correct prompt is now here
             prompt = f"""You are an expert agricultural assistant for Indian farmers.
             CONTEXT: The user is located where the {weather_context}.
             USER'S QUESTION: "{text}"
@@ -126,11 +126,7 @@ async def predict(
             response = model.generate_content(prompt)
         
         analysis_text = response.text
-
-        # We create a clean version of the text specifically for audio generation
         clean_text = clean_text_for_speech(analysis_text)
-        
-        # The audio generation now uses the clean text
         chunks = robust_chunk_splitter(clean_text)
         combined_audio = AudioSegment.empty()
         for chunk in chunks:
@@ -146,7 +142,6 @@ async def predict(
             final_audio_file.seek(0)
             audio_base64 = base64.b64encode(final_audio_file.read()).decode("utf-8")
 
-        # We still return the ORIGINAL analysis_text with Markdown for the frontend to display
         return {"analysis": analysis_text, "audioContent": audio_base64}
 
     except Exception as e:

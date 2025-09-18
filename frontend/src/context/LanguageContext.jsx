@@ -1,21 +1,31 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
-  // This now defaults to the saved language in localStorage, or 'en'
-  const [language, setLanguage] = useState(() => localStorage.getItem("agro_lang") || "en");
+  const { i18n } = useTranslation();
+  
+  const [language, setLanguage] = useState(() => {
+    const savedLang = localStorage.getItem("agro_lang") || "en";
+    return savedLang;
+  });
 
-  // This effect automatically saves the language to the browser's storage whenever it changes
   useEffect(() => {
     localStorage.setItem("agro_lang", language);
-  }, [language]);
+    if (i18n.language !== language) {
+      i18n.changeLanguage(language);
+    }
+  }, [language, i18n]);
+
+  const value = { language, setLanguage };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage }}>
+    <LanguageContext.Provider value={value}>
       {children}
-    </LanguageContext.Provider>
+    </LanguageContext.Provider> 
   );
 };
 
 export const useLanguage = () => useContext(LanguageContext);
+
