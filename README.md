@@ -152,7 +152,7 @@ npm run dev
 
 ## 🤝 Contributing  
 
-1. Fork the repository  
+1. Fork the Repository  
 2. Clone your fork locally  
 3. Create a new branch for your feature/fix  
 4. Commit your changes and push to your fork  
