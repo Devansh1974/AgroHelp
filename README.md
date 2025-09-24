@@ -163,7 +163,7 @@ We welcome contributions in the areas of bug fixes, feature development, documen
 
 ## 📜 License  
 
-This project is developed as part of a collaborative effort. Licensing terms to be finalized.  
+This project is Developed as part of a collaborative effort. Licensing terms to be finalized.  
 
 ---
 
