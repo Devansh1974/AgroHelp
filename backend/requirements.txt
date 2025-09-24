@@ -7,4 +7,3 @@ python-dotenv
 fastapi-cors
 requests
 pydub
-pyaudioop
